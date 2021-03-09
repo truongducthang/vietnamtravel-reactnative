@@ -6,8 +6,8 @@
  * @flow strict-local
  */
 
-import React, {useState} from 'react';
-import {Image, StyleSheet, View} from 'react-native';
+import React, {useState, useRef, useEffect} from 'react';
+import {Image, StyleSheet, View, BackHandler, Platform} from 'react-native';
 //react navigations
 import 'react-native-gesture-handler';
 import LinearGradient from 'react-native-linear-gradient';
@@ -29,6 +29,27 @@ const SplashScreen = ({navigation}) => {
 };
 const HomeScreen = ({navigation}) => {
   const [loading, setLoading] = useState(true);
+  //webview
+  const webView = useRef(null);
+  const [canGoBack, setCanGoBack] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      BackHandler.addEventListener('hardwareBackPress', HandleBackPressed);
+
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', HandleBackPressed);
+      };
+    }
+  }, []); // INITIALIZE ONLY ONCE
+
+  const HandleBackPressed = () => {
+    if (webView.current) {
+      webView.current.goBack();
+      return true; // PREVENT DEFAULT BEHAVIOUR (EXITING THE APP)
+    }
+    return false;
+  };
 
   return (
     <>
@@ -44,6 +65,11 @@ const HomeScreen = ({navigation}) => {
           domStorageEnabled={true}
           onLoadStart={() => setLoading(true)}
           onLoad={() => setLoading(false)}
+          //backHandler
+          ref={webView}
+          onNavigationStateChange={(navState) =>
+            setCanGoBack(navState.canGoBack)
+          }
         />
         {loading ? <SplashScreen /> : null}
       </View>
